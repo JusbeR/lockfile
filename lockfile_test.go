@@ -5,6 +5,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -91,4 +92,56 @@ func TestLockFileWhenLockingTwice(t *testing.T) {
 	assert.Nil(t, err, "Should lock normally after unlock")
 	err = lockFile.Unlock()
 	assert.Nil(t, err, "Should unlock normally")
+}
+
+func TestLockWaitWhenResourceIsNotTaken(t *testing.T) {
+	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	lockFile, _ := NewLockFile(currentDir)
+	err := lockFile.LockWait(time.Duration(time.Second * 5))
+	assert.Nil(t, err)
+	err = lockFile.Unlock()
+	assert.Nil(t, err)
+}
+func unlockAfterDuration(lockfile *Lockfile, duration time.Duration) {
+	time.Sleep(duration)
+	lockfile.Unlock()
+}
+func TestLockWaitWhenResourceIsTakenWaitTimeout(t *testing.T) {
+	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	lockFile, _ := NewLockFile(currentDir)
+	err := lockFile.Lock()
+	assert.Nil(t, err)
+	go unlockAfterDuration(&lockFile, time.Duration(time.Millisecond*200))
+	lockFile2, _ := NewLockFile(currentDir)
+	err = lockFile2.LockWait(time.Duration(time.Millisecond * 400))
+	assert.Nil(t, err)
+	err = lockFile2.Unlock()
+	assert.Nil(t, err)
+}
+
+func TestLockWaitWhenResourceIsTakenTimoutExpires(t *testing.T) {
+	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	lockFile, _ := NewLockFile(currentDir)
+	err := lockFile.Lock()
+	assert.Nil(t, err)
+	go unlockAfterDuration(&lockFile, time.Duration(time.Millisecond*400))
+	lockFile2, _ := NewLockFile(currentDir)
+	err = lockFile2.LockWait(time.Duration(time.Millisecond * 100))
+	assert.NotNil(t, err)
+	// TODO: a proper time pkg mocking needed.
+	time.Sleep(time.Millisecond * 500)
+}
+
+func TestLockWaitWhenZeroDuration(t *testing.T) {
+	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	lockFile, _ := NewLockFile(currentDir)
+	err := lockFile.LockWait(time.Duration(0))
+	assert.NotNil(t, err)
+}
+
+func TestLockWaitWhenTooSmallDuration(t *testing.T) {
+	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	lockFile, _ := NewLockFile(currentDir)
+	err := lockFile.LockWait(time.Duration(time.Millisecond * 90))
+	assert.NotNil(t, err)
 }
