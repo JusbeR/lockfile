@@ -1,5 +1,7 @@
 # Simple file lock
 
+[![Build Status](https://travis-ci.org/JusbeR/lockfile.svg?branch=master)](https://travis-ci.org/JusbeR/lockfile)
+
 Simple file lock to share a resource between processes.
 
 ## Get it
