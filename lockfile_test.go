@@ -13,6 +13,7 @@ import (
 func TestNewLockFileWhenPathDoesNotExist(t *testing.T) {
 	_, err := NewLockFile("/path/that/does/not/exist")
 	assert.NotNil(t, err)
+	assert.EqualError(t, err, "Invalid path/filename given(/path/that/does/not/exist)")
 }
 
 func TestNewLockFileWhenPathExists(t *testing.T) {
@@ -61,6 +62,7 @@ func TestLockFileWhenAutoNamedFileAlreadyMade(t *testing.T) {
 	assert.Equal(t, defaultLockFileName, lockFile2.fileName)
 	err = lockFile2.Lock()
 	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Failed to aquire lock:")
 }
 
 func TestLockFileWhenSelfNamedFileAlreadyMade(t *testing.T) {
@@ -77,6 +79,7 @@ func TestLockFileWhenSelfNamedFileAlreadyMade(t *testing.T) {
 	assert.Equal(t, "test", lockFile2.fileName)
 	err = lockFile2.Lock()
 	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Failed to aquire lock:")
 }
 
 func TestLockFileWhenLockingTwice(t *testing.T) {
@@ -86,6 +89,7 @@ func TestLockFileWhenLockingTwice(t *testing.T) {
 	assert.Nil(t, err, "Should lock normally")
 	err = lockFile.Lock()
 	assert.NotNil(t, err, "Should not lock twice")
+	assert.Contains(t, err.Error(), "Failed to aquire lock:")
 	err = lockFile.Unlock()
 	assert.Nil(t, err, "Should unlock normally")
 	err = lockFile.Lock()
@@ -128,6 +132,7 @@ func TestLockWaitWhenResourceIsTakenTimoutExpires(t *testing.T) {
 	lockFile2, _ := NewLockFile(currentDir)
 	err = lockFile2.LockWait(time.Duration(time.Millisecond * 100))
 	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "Failed to aquire lock:")
 	// TODO: a proper time pkg mocking needed.
 	time.Sleep(time.Millisecond * 500)
 }
@@ -137,6 +142,7 @@ func TestLockWaitWhenZeroDuration(t *testing.T) {
 	lockFile, _ := NewLockFile(currentDir)
 	err := lockFile.LockWait(time.Duration(0))
 	assert.NotNil(t, err)
+	assert.EqualError(t, err, "Invalid timeout(0s)")
 }
 
 func TestLockWaitWhenTooSmallDuration(t *testing.T) {
@@ -144,4 +150,5 @@ func TestLockWaitWhenTooSmallDuration(t *testing.T) {
 	lockFile, _ := NewLockFile(currentDir)
 	err := lockFile.LockWait(time.Duration(time.Millisecond * 90))
 	assert.NotNil(t, err)
+	assert.EqualError(t, err, "Invalid timeout(90ms)")
 }

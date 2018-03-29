@@ -3,12 +3,21 @@
 Simple file lock to share a resource between processes.
 
 ## Usage
-    resourceLock, err := NewLockFile("/etc/myswlocks/")
+    resourceLock, err := NewLockFile("./resourcelock")
     if err != nil {
         log.Fatalln("Could not create lock, maybe file path is unaccessible or something:", err)
     }
     if err := resourceLock.Lock(); err != nil {
         log.Println("Someone else is using the resource")
+    } else {
+        defer resourceLock.Unlock()
+        // Use resource
     }
-    defer resourceLock.Unlock()
-    // Use resource
+
+Or alternatively
+
+    ...
+    if err := resourceLock.LockWait( 60 * time.Second ); err != nil {
+        log.Println("Someone else is using the resource and not giving it up even after one minute of waiting")
+    } else {
+    ...

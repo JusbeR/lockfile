@@ -41,8 +41,11 @@ func NewLockFile(path string) (Lockfile, error) {
 // Lock is used to aquire new lock. if err != nil lock could not be aquired and you should try it later again.
 func (lockFile *Lockfile) Lock() error {
 	file, err := os.OpenFile(path.Join(lockFile.path, lockFile.fileName), os.O_RDONLY|os.O_CREATE|os.O_EXCL, 0666)
+	if err != nil {
+		return fmt.Errorf("Failed to aquire lock: %v", err)
+	}
 	defer file.Close()
-	return err
+	return nil
 }
 
 // Unlock is used to free the resource
@@ -53,21 +56,22 @@ func (lockFile *Lockfile) Unlock() error {
 // LockWait is like Lock(), but waits for resource to become available. If resource can't be aquired after timeout, error is returned.
 // Note that this is not for realtime use. timeout is waited at least as long as stated, but it can be longer too.
 // When many processes try to aquire the same lock, it is randomly selected who gets it.
+// Timouts smaller than 100ms are not supported
 func (lockFile *Lockfile) LockWait(timeout time.Duration) error {
 	if timeout < time.Duration(time.Millisecond*100) {
-		return fmt.Errorf("TODO: Error here")
+		return fmt.Errorf("Invalid timeout(%v)", timeout)
 	}
 	now := time.Now()
 	endWaiting := now.Add(timeout)
+	var err error
 	for now.Before(endWaiting) {
-		file, err := os.OpenFile(path.Join(lockFile.path, lockFile.fileName), os.O_RDONLY|os.O_CREATE|os.O_EXCL, 0666)
+		err = lockFile.Lock()
 		if err != nil {
 			time.Sleep(time.Duration(time.Millisecond * 100))
 			now = time.Now()
 			continue
 		}
-		defer file.Close()
 		return nil
 	}
-	return fmt.Errorf("TODO: Error here2")
+	return err
 }
