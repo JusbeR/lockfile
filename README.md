@@ -2,8 +2,13 @@
 
 Simple file lock to share a resource between processes.
 
+## Get it
+    go get github.com/JusbeR/lockfile
+    
 ## Usage
-    resourceLock, err := NewLockFile("./resourcelock")
+    import "github.com/JusbeR/lockfile"
+    ...
+    resourceLock, err := lockfile.NewLockFile("./resourcelock")
     if err != nil {
         log.Fatalln("Could not create lock, maybe file path is unaccessible or something:", err)
     }
